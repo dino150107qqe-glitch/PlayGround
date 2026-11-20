@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Aetherfall</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wghtd@600;700&family=IM+Fell+English:ital@0;1&display=swap');
+:root{--gold:#dcb765;--cream:#f6edcf;--jade:#55c8a2;--violet:#b296ef}
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#081317;color:var(--cream);font-family:'IM Fell English',serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;image-rendering:auto}
+#vignette{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 150px 35px rgba(2,8,10,.9)}
+#top{position:fixed;left:24px;right:24px;top:18px;height:68px;display:flex;align-items:flex-start;justify-content:space-between;pointer-events:none}
+.panel{background:linear-gradient(180deg,rgba(16,31,31,.94),rgba(8,18,20,.82));border:1px solid rgba(220,183,101,.55);box-shadow:0 7px 24px rgba(0,0,0,.35),inset 0 0 18px rgba(220,183,101,.04);clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+#status{width:270px;height:64px;padding:8px 14px}.health-name{display:flex;justify-content:space-between;color:#d8c9a4;font:12px Cinzel;letter-spacing:2px}.bar{height:8px;margin:5px 0 6px;background:#17201f;border:1px solid #52472f}.fill{height:100%;background:linear-gradient(90deg,#aa2e29,#e05d48);box-shadow:0 0 8px #df5c48;width:100%;transition:.2s}.mana{background:linear-gradient(90deg,#4b5aaf,#78a2d9)!important;box-shadow:0 0 8px #78a2d9!important}
+#quest{width:280px;padding:12px 16px 10px}.eyebrow{font:9px Cinzel;color:var(--gold);letter-spacing:3px}.quest-title{font-size:17px;margin:3px 0 2px}.quest-sub{font-size:12px;color:#aebdaf}
+#spells{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:flex;gap:8px}.spell{width:58px;height:58px;border:1px solid rgba(220,183,101,.45);border-radius:50%;background:radial-gradient(circle at 42% 35%,rgba(114,171,139,.38),rgba(12,27,27,.96));position:relative;display:grid;place-items:center;color:#e5dfbd;font-size:22px;box-shadow:0 5px 16px rgba(0,0,0,.5);pointer-events:auto}.spell b{position:absolute;bottom:-15px;font:9px Cinzel;color:#b7b79d}.spell.active{border-color:#f0d49a;box-shadow:0 0 18px rgba(212,189,120,.55)}.cool{position:absolute;inset:-1px;border-radius:50%;background:rgba(2,8,9,.68);clip-path:polygon(50% 50%,50% 0,50% 0,50% 0,50% 0)}
+#message{position:fixed;left:50%;top:105px;transform:translate(-50%,0);font-size:19px;text-align:center;text-shadow:0 2px 8px #000;opacity:0;transition:.35s;pointer-events:none}#message.show{opacity:1}
+#crosshair{position:fixed;left:50%;top:50%;width:14px;height:14px;transform:translate(-50%,-50%);border:1px solid rgba(239,226,174,.7);border-radius:50%;box-shadow:0 0 7px rgba(239,226,174,.25);pointer-events:none}
+#start,#win{position:fixed;inset:0;z-index:20;display:grid;place-items:center;text-align:center;background:radial-gradient(circle at 50%,rgba(17,52,48,.28),rgba(3,10,12,.88));transition:.5s}.hide{opacity:0;pointer-events:none!important}h1{font:700 clamp(52px,8vw,94px) Cinzel;margin:0;letter-spacing:.06em;text-shadow:0 4px 24px #000;color:#ede3bd}.subtitle{font-size:21px;color:#c7ba91;margin:8px 0 26px}.gold{color:var(--gold)}button#begin{font:700 13px Cinzel;letter-spacing:4px;padding:14px 34px;border:1px solid #d6b86e;color:#efe5bd;background:rgba(13,30,28,.9);cursor:pointer}.controls{margin-top:20px;font-size:13px;color:#9eb1a5}
+#touch-left,#touch-right{display:none;position:fixed;bottom:96px;width:68px;height:68px;border:1px solid rgba(220,183,101,.38);border-radius:50%;background:rgba(11,28,28,.48);z-index:5;touch-action:none}
+#touch-left{left:18px}#touch-right{right:18px}
+#touch-left:after{content:'MOVE';position:absolute;inset:0;display:grid;place-items:center;font:9px Cinzel}.stick-dot{width:24px;height:24px;border-radius:50%;background:rgba(213,190,128,.35);position:absolute;left:22px;top:22px}
+#win{display:none}.#win.show{display:grid}
+@media(max-width:700px){#top{left:10px;right:10px;top:8px}#status{width:170px;height:58px;padding:7px 9px}#quest{width:190px;padding:9px 10px}.quest-title{font-size:13px}.quest-sub{font-size:10px}#spells{bottom:12px}.spell{width:50px;height:50px}#touch-left,#touch-right{display:block}.controls{font-size:11px}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas><div id="vignette"></div><div id="crosshair"></div>
+<div id="top"><div id="status" class="panel"><div class="health-name"><span>ELYRA</span><span id="hpText">100 / 100</span></div><div class="bar"><div id="hp" class="fill"></div></div><div class="bar" style="height:6px"><div id="mp" class="fill mana" style="width:100%"></div></div></div><div id="quest" class="panel"><div class="eyebrow">THE ASHEN QUEST</div><div class="quest-title">Break the Drake's reign</div><div class="quest-sub" id="objective">Slay the wyrm guardians · 0/3</div></div></div>
+<div id="message"></div>
+<div id="spells"><div class="spell active" data-spell="0">✦<b>1</b><i class="cool"></i></div><div class="spell" data-spell="1">♢<b>2</b><i class="cool"></i></div><div class="spell" data-spell="2">☽<b>3</b><i class="cool"></i></div></div>
+<div id="touch-left"><div class="stick-dot"></div></div><div id="touch-right"></div>
+<div id="start"><div><h1>AETHERFALL</h1><div class="subtitle">Where the last spell became a <span class="gold">legend</span></div><button id="begin">ENTER THE REALM</button><div class="controls">WASD / arrows to move · Mouse to aim · Click or 1–3 to cast · Shift to dash</div></div></div>
+<div id="win"><div><div class="eyebrow">THE REALM IS FREE</div><h1>VICTORY</h1><div class="subtitle">The Ashen Crown lies broken</div><button id="again">RIDE AGAIN</button></div></div>
+<script>
+const c=document.getElementById('game'),x=c.getContext('2d');let W,H,DPR,started=false,over=false;
+function resize(){DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;c.width=W*DPR;c.height=H*DPR;c.style.width=W+'px';c.style.height=H+'px';x.setTransform(DPR,0,0,DPR,0,0)}addEventListener('resize',resize);resize();
+const keys={},mouse={x:W/2,y:H/2,down:false};let camera={x:0,y:0},shake=0;
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if('123'.includes(e.key))cast(+e.key-1)});addEvent('keyup',e=>keys[e.key.toLowerCase()]=false);
+function addEvent(a,b,f){addEventListener(a,b,f)}addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});addEventListener('mousedown',()=>mouse.down=true);addEventListener('mouseup',()=>mouse.down=false);
+let player={x:0,y:230,hp:100,mp:100,r:14,angle:0,inv:0,dash:0,trail:[]},kills=0,dragonUnlocked=false;
+const terrain=[],ruins=[],trees=[],guards=[],projectiles=[],embers=[],particles=[];
+for(let i=0;i<170;i++){terrain.push({x:(Math.random()-.5)*2200,y:(Math.random()-.5)*1800,s:Math.random()*90+20,h:Math.random()*.8+.2})}
+for(let i=0;i<28;i++){let a=i/28*Math.PI*2,r=460+Math.random()*260;ruins.push({x:Math.cos(a)*r,y:Math.sin(a)*r*.7,a,s:Math.random()*28+22})}
+for(let i=0;i<90;i++){let a=Math.random()*Math.PI*2,r=300+Math.random()*760;trees.push({x:Math.cos(a)*r,y:Math.sin(a)*r*.75,s:18+Math.random()*32})}
+const spawns=[[ -330,-260],[360,-300],[420,170],[-380,190]];
+spawns.forEach((p,i)=>spawnGuard(p[0],p[1],i));
+let dragon={x:0,y:-520,hp:700,max:700,r:42,phase:0,active:false,dead:false,flash:0};
+function spawnGuard(x,y,type){guards.push({x,y,hp:type===3?130:90,max:type===3?130:90,r:type===3?19:16,angle:0,flash:0,slow:0,type,shoot:Math.random()*2})}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function worldToScreen(p){return{x:p.x-camera.x+W/2,y:p.y-camera.y+H/2}}
+function cast(i){if(!started||over)return;let costs=[12,28,20],cooldowns=[320,900,650],now=performance.now();if(cast.last===undefined)cast.last=[0,0,0];if(now-cast.last[i]<cooldowns[i]||player.mp<costs[i])return;cast.last[i]=now;player.mp-=costs[i];document.querySelectorAll('.spell').forEach((e,n)=>e.classList.toggle('active',n===i));
+let angle=player.angle;if(i===0){projectiles.push({x:player.x,y:player.y,vx:Math.cos(angle)*520,vy:Math.sin(angle)*520,r:7,life:1.2,type:0,damage:28})}
+if(i===1){projectiles.push({x:player.x+Math.cos(angle)*20,y:player.y+Math.sin(angle)*20,vx:Math.cos(angle)*330,vy:Math.sin(angle)*330,r:24,life:.9,type:1,damage:48})}
+if(i===2){for(let k=-2;k<=2;k++){let a=angle+k*.18;projectiles.push({x:player.x,y:player.y,vx:Math.cos(a)*410,vy:Math.sin(a)*410,r:4,life:1.1,type:2,damage:16})}}
+}
+for(let i=0;i<3;i++){let el=document.querySelectorAll('.spell')[i];el.onclick=()=>cast(i)}
+addEventListener('contextmenu',e=>e.preventMethod?.());
+function message(t,sec=2){let m=document.getElementById('message');m.textContent=t;m.classList.add('show');clearTimeout(message.timer);message.timer=setTimeout(()=>m.classList.remove('show'),sec*1000)}
+function update(dt){if(!started||over)return;let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);let len=Math.hypot(dx,dy)||1;dx/=len;dy/=len;
+let speed=player.dash>0?520:190;if(keys.shift&&player.dash<=0&&player.mp>=8){player.dash=.18;player.mp-=8}if(player.dash>0){player.dash-=dt;speed=520}else player.dash=Math.max(0,player.dash-dt);
+player.x+=dx*speed*dt;player.y+=dy*speed*dt;player.inv=Math.max(0,player.inv-dt);player.mp=Math.min(100,player.mp+12*dt);
+player.angle=Math.atan2(mouse.y-(H/2),mouse.x-(W/2));if(mouse.down&&performance.now()%900<16)cast(0);
+camera.x+=(player.x-camera.x)*Math.min(1,dt*5);camera.y+=(player.y-camera.y)*Math.min(1,dt*5);shake*=.88;
+for(let i=projectiles.length-1;i>=0;i--){let p=projectiles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(p.life<=0){projectiles.splice(i,1);continue}for(let j=guards.length-1;j>=0;j--){let g=guards[j];if(dist(p,g)<g.r+p.r){g.hp-=p.damage;g.flash=.12;p.life=0;spawnParticles(p.x,p.y,p.type===1?'#b296ef':'#74d8c1',8);if(g.hp<=0){spawnParticles(g.x,g.y,'#ef9d55',20);guards.splice(j,1);kills++}break}}if(dragon.active&&!dragon.dead&&dist(p,dragon)<dragon.r+p.r){dragon.hp-=p.damage*.7;dragon.flash=.12;p.life=0;spawnParticles(p.x,p.y,'#ec6c55',6)}}
+guards.forEach(g=>{g.angle=Math.atan2(player.y-g.y,player.x-g.x);if(dist(g,player)<480){g.shoot-=dt;if(g.shoot<=0){g.shoot=1.4+Math.random();let a=g.angle;projectiles.push({x:g.x,y:g.y,vx:Math.cos(a)*180,vy:Math.sin(a)*180,r:6,life:3,type:3,damage:12})}if(dist(g,player)<70)hurt(8*dt)}});
+for(let i=projectiles.length-1;i>=0;i--)if(projectiles[i].type===3&&dist(projectiles[i],player)<player.r+projectiles[i].r){hurt(projectiles[i].damage);projectiles.splice(i,1)}
+if(kills>=3&&!dragonUnlocked){dragonUnlocked=true;dragon.active=true;message('THE ASHEN WYRM DESCENDS',3)}
+if(dragon.active&&!dragon.dead){dragon.phase+=dt*0.25;let tx=Math.cos(dragon.phase)*520,ty=-520+Math.sin(dragon.phase*.7)*160;dragon.x+=(tx-dragon.x)*dt*.65;dragon.y+=(ty-dragon.y)*dt*.65;dragon.flash=Math.max(0,dragon.flash-dt);dragon.shoot=(dragon.shoot||1.5)-dt;if(dragon.shoot<=0){dragon.shoot=1.15;for(let k=0;k<12;k++){let a=k/12*Math.PI*2+dragon.phase;projectiles.push({x:dragon.x,y:dragon.y,vx:Math.cos(a)*150,vy:Math.sin(a)*150,r:7,life:4,type:3,damage:10})}}if(dragon.hp<=0){dragon.dead=true;over=true;setTimeout(()=>document.getElementById('win').style.display='grid',700)}}
+for(let i=embers.length-1;i>=0;i--){embers[i].life-=dt;if(embers[i].life<=0)embers.splice(i,1)}
+updateParticles(dt);document.getElementById('hp').style.width=Math.max(0,player.hp)+'%';document.getElementById('mp').style.width=player.mp+'%';document.getElementById('hpText').textContent=Math.ceil(player.hp)+' / 100';document.getElementById('objective').textContent=kills<3?'Slay the wyrm guardians · '+kills+'/3':'Strike the Ashen Wyrm · '+Math.ceil(dragon.hp/7)+'%'
+}
+function hurt(n){if(player.inv>0)return;player.hp-=n;player.inv=n>7?.3:.05;shake=5;if(player.hp<=0){player.hp=100;player.x=0;player.y=230;message('The light recalls you',2)}}
+function spawnParticles(px,py,color,n){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=Math.random()*140;particles.push({x:px,y:py,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.3+Math.random()*.6,max:1,color,r:2+Math.random()*4})}}
+function updateParticles(dt){for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1)}}
+function draw(){x.clearRect(0,0,W,H);let sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;x.save();x.translate(sx,sy);
+let grad=x.createRadialGradient(W/2,H/2,40,W/2,H/2,Math.max(W,H)*.7);grad.addColorStop(0,'#3a685b');grad.addColorStop(.45,'#1c463f');grad.addColorStop(1,'#09191a');x.fillStyle=grad;x.fillRect(-20,-20,W+40,H+40);
+// terrain
+for(let t of terrain){let p=worldToScreen(t);if(p.x<-100||p.x>W+100||p.y<-100||p.y>H+100)continue;x.beginPath();x.ellipse(p.x,p.y,t.s,t.s*.45,0,0,Math.PI*2);x.fillStyle=`rgba(194,174,111,${.02*t.h})`;x.fill()}
+x.save();x.translate(W/2-camera.x,H/2-camera.y);
+// rings and ruins
+x.strokeStyle='rgba(184,169,112,.12)';x.lineWidth=3;x.beginPath();x.arc(0,0,520,0,Math.PI*2);x.stroke();x.beginPath();x.arc(0,0,390,0,Math.PI*2);x.stroke();
+ruins.forEach(r=>{x.save();x.translate(r.x,r.y);x.rotate(r.a);x.fillStyle='#24382f';x.fillRect(-r.s*.55,-r.s*.18,r.s*1.1,r.s*.36);x.fillStyle='#7e8067';x.fillRect(-r.s*.42,-r.s*.28,r.s*.16,r.s*.6);x.fillRect(r.s*.26,-r.s*.28,r.s*.16,r.s*.6);x.restore()});
+trees.forEach(t=>{let q=worldToScreen(t);if(q.x<-60||q.x>W+60||q.y<-60||q.y>H+60)return;x.fillStyle='rgba(6,25,23,.75)';x.beginPath();x.moveTo(q.x,q.y-t.s*.9);x.lineTo(q.x-t.s*.55,q.y+t.s*.35);x.lineTo(q.x+t.s*.55,q.y+t.s*.35);x.fill();x.fillStyle='#203d32';x.beginPath();x.moveTo(q.x,q.y-t.s);x.lineTo(q.x-t.s*.42,q.y-t.s*.2);x.lineTo(q.x+t.s*.42,q.y-t.s*.2);x.fill()});
+// player shadow and body
+let p=worldToScreen(player);drawShadow(p.x,p.y,20);x.save();x.translate(p.x,p.y);x.rotate(player.angle);x.fillStyle='#273f3a';x.beginPath();x.moveTo(18,0);x.lineTo(-10,-12);x.lineTo(-6,0);x.lineTo(-10,12);x.closePath();x.fill();x.strokeStyle='#d4c58f';x.lineWidth=2;x.beginPath();x.moveTo(-4,-10);x.lineTo(8,0);x.lineTo(-4,10);x.stroke();x.restore();
+// guards
+guards.forEach(g=>{let q=worldToScreen(g);drawShadow(q.x,q.y,g.r);x.save();x.translate(q.x,q.y);x.rotate(g.angle);x.fillStyle=g.flash>0?'#fff1bc':'#6a382c';x.beginPath();x.ellipse(0,0,g.r,g.r*.82,0,0,Math.PI*2);x.fill();x.fillStyle='#bd6a42';x.beginPath();x.moveTo(-g.r*.5,-g.r*.3);x.lineTo(0,-g.r*1.25);x.lineTo(g.r*.5,-g.r*.3);x.fill();x.fillStyle='#d2bd83';x.fillRect(8,-2,22,3);x.restore();drawBar(q.x,q.y-g.r-12,g.hp/g.max,44)});
+// dragon
+if(dragon.active&&!dragon.dead){let d=worldToScreen(dragon);drawShadow(d.x,d.y,60);x.save();x.translate(d.x,d.y);x.rotate(dragon.phase*.4);x.fillStyle=dragon.flash>0?'#ffe5a5':'#20272a';x.beginPath();x.moveTo(0,-50);x.bezierCurveTo(35,-50,45,-12,28,14);x.lineTo(10,38);x.lineTo(-10,38);x.lineTo(-28,14);x.bezierCurveTo(-45,-12,-35,-50,0,-50);x.fill();x.fillStyle='#4d2f32';x.beginPath();x.moveTo(-20,-25);x.quadraticCurveTo(-72,-55,-84,-5);x.quadraticCurveTo(-38,0,-17,10);x.fill();x.beginPath();x.moveTo(20,-25);x.quadraticCurveTo(72,-55,84,-5);x.quadraticCurveTo(38,0,17,10);x.fill();x.fillStyle='#d69a48';x.fillRect(-8,-40,16,5);x.restore();drawBar(d.x,d.y-75,dragon.hp/dragon.max,110)}
+projectiles.forEach(p=>{let q=worldToScreen(p);x.beginPath();x.arc(q.x,q.y,p.r,0,Math.PI*2);x.fillStyle=p.type===3?'#f08b56':p.type===1?'#aa86f2':'#82dfbe';x.shadowBlur=p.type===1?20:12;x.shadowColor=x.fillStyle;x.fill();x.shadowBlur=0});
+particles.forEach(p=>{let q=worldToScreen(p);x.globalAlpha=Math.max(0,p.life);x.fillStyle=p.color;x.beginPath();x.arc(q.x,q.y,p.r,0,Math.PI*2);x.fill();x.globalAlpha=1});
+x.restore();x.restore();
+requestAnimationFrame(loop)}
+function drawShadow(px,py,r){x.fillStyle='rgba(2,10,10,.34)';x.beginPath();x.ellipse(px,py+r*.65,r,r*.28,0,0,Math.PI*2);x.fill()}
+function drawBar(px,py,v,w){x.fillStyle='rgba(5,12,12,.85)';x.fillRect(px-w/2,py,w,5);x.fillStyle='#bd4b3e';x.fillRect(px-w/2,py,Math.max(0,w*v),5)}
+let last=performance.now();function loop(t){let dt=Math.min(.033,(t-last)/1000);last=t;update(dt);draw()}requestAnimationFrame(loop);
+document.getElementById('begin').onclick=()=>{started=true;document.getElementById('start').classList.add('hide');message('Your spellbinds awaken',2)};document.getElementById('again').onclick=()=>location.reload();
+// mobile controls
+let joy=false;addEventListener('touchmove',e=>{for(let t of e.touches){if(t.clientX<W*.5){let dx=t.clientX-52,dy=t.clientY-(H-130);keys.a=dx<-20;keys.d=dx>20;keys.w=dy<-20;keys.s=dy>20}else mouse.x=t.clientX,mouse.y=t.clientY,player.angle=Math.atan2(mouse.y-H/2,mouse.x-W/2)}},{passive:false});addEventListener('touchstart',e=>{for(let t of e.touches)if(t.clientX>W*.5){mouse.down=true}}, {passive:false});addEventListener('touchend',()=>{mouse.down=false;['a','d','w','s'].forEach(k=>keys[k]=false)});
+</script>
+</body>
+</html>
